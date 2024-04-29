@@ -1,0 +1,201 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import re
+import nltk
+from nltk import word_tokenize
+from nltk.corpus import stopwords
+from collections import Counter
+from wordcloud import WordCloud
+
+
+nltk.download('punkt')
+nltk.download('stopwords')
+
+df1 = pd.read_csv('twitter_dataset.csv')
+
+df = df1.head(200)
+
+pd.set_option('display.max_column', None)
+pd.set_option('display.expand_frame_repr', False)
+
+print(df.describe())
+print(df.head())
+
+df['Text'] = df['Text'].str.lower()
+def preprocessed_text(text):
+    text = re.sub(r'[^a-zA-z0-9\s]','',text)
+    return text
+df['prep_text'] = df['Text'].apply(preprocessed_text)
+df['txt_tokenize'] = df['prep_text'].apply(word_tokenize)
+
+stop_words = set(stopwords.words('english'))
+def remove_stopwords(token):
+    return [word for word in token if word not in stop_words]
+df['Text'] = df['txt_tokenize'].apply(remove_stopwords)
+
+print(df['Text'].head(10))
+
+
+
+word_counts = Counter(word for row in df['Text'] for word in row)
+
+# Option 1: Find all words and their counts
+most_frequent_words = word_counts.most_common()
+
+# Option 2: Find the top N most frequent words (replace N with your desired number)
+N = 200  # Change this to the number of most frequent words you want
+most_frequent_words = word_counts.most_common(N)
+print("Most frequent words and their counts:")
+for word, count in most_frequent_words:
+  print(f"{word}: {count}")
+
+wordcloud = WordCloud(width=400,height=350, background_color='white')
+wordcloud.generate_from_frequencies(dict(most_frequent_words))
+
+plt.imshow(wordcloud,interpolation='bilinear')
+
+plt.axis('off')
+plt.show()
+
+
+
+##EDA
+
+# Convert 'Timestamp' column to datetime
+data['Timestamp'] = pd.to_datetime(data['Timestamp'])
+
+# Extract hour from the timestamp
+data['Hour'] = data['Timestamp'].dt.hour
+
+# Group by hour and count the number of tweets per hour
+tweet_count_by_hour = data.groupby('Hour').size()
+
+# Plot the tweet count over time
+plt.figure(figsize=(10, 6))
+tweet_count_by_hour.plot(kind='line', marker='o', color='skyblue')
+plt.title('Tweet Posting Behavior Over A Day')
+plt.xlabel('Hour')
+plt.ylabel('Number of Tweets')
+
+# Set x-axis ticks to range from 1 to 24
+plt.xticks(range(1, 25))
+
+plt.legend()
+plt.tight_layout()
+
+plt.savefig('trends_by_hours.png')
+plt.show()
+
+
+# Convert 'Timestamp' column to datetime
+data['Timestamp'] = pd.to_datetime(data['Timestamp'])
+
+# Extract date from the timestamp
+data['Day_of_week'] = data['Timestamp'].dt.dayofweek
+
+# Group by date and count the number of tweets per date
+tweet_count_by_day = data.groupby('Day_of_week').size()
+
+# Find the date with the highest tweet count
+max_tweet_day = tweet_count_by_day.idxmax()
+max_tweet_count = tweet_count_by_day.max()
+
+# Plot the tweet count over time
+plt.figure(figsize=(10, 6))
+tweet_count_by_day.plot(kind='line', marker='o', color='skyblue')
+
+# Define the labels for the x-axis
+Days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+
+plt.title('Tweet Posting Behavior Over Days Of Week')
+plt.xlabel('Day')
+plt.ylabel('Number of Tweets')
+
+# Set exact hours on the x-axis
+plt.xticks(range(7),Days_of_week)
+
+plt.legend()
+plt.tight_layout()
+plt.savefig('trends_by_days.png')
+
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+##### Sentiment Analysis
+import pandas as pd
+from textblob import TextBlob
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset from CSV
+data = pd.read_csv('sentiment.csv')
+
+# Perform sentiment analysis using TextBlob
+data['polarity'] = data['text'].apply(lambda x: TextBlob(x).sentiment.polarity)
+
+# Categorize tweets into positive, negative, and neutral based on polarity
+data['sentiment'] = data['polarity'].apply(lambda x: 'positive' if x > 0.1 else ('negative' if x < -0.1 else 'neutral'))
+
+# print(data)
+# Count the number of positive, negative, and neutral tweets
+sentiment_counts = data['sentiment'].value_counts()
+
+# Plotting the sentiment analysis
+plt.figure(figsize=(8, 6))
+sns.barplot(x=sentiment_counts.index, y=sentiment_counts.values, palette="viridis")
+plt.xlabel('Sentiment')
+plt.ylabel('Number of Tweets')
+plt.title('Sentiment Analysis')
+plt.show()
+
+# Separate positive and negative tweets
+positive_tweets = data[data['sentiment'] == 'positive']
+negative_tweets = data[data['sentiment'] == 'negative']
+neutral_tweets = data[data['sentiment'] == 'neutral']
+
+# Print a few positive tweets
+print("Positive Tweets:")
+for tweet in positive_tweets['text'].head():
+    print("-", tweet)
+
+# Print a few negative tweets
+print("\nNegative Tweets:")
+for tweet in negative_tweets['text'].head():
+    print("-", tweet)
+
+# Print a few neutral tweets
+print("\nNegative Tweets:")
+for tweet in neutral_tweets['text'].head():
+    print("-", tweet)
+
+
+# Plot the distribution of polarity scores for positive and negative tweets
+# A kernel density estimate (KDE) plot is a method for visualizing the distribution of observations in a dataset, analogous to a histogram.
+sns.kdeplot(positive_tweets["polarity"], shade=True, label="Positive")
+sns.kdeplot(negative_tweets["polarity"], shade=True, label="Negative")
+sns.kdeplot(neutral_tweets["polarity"], shade=True, label="Neutral")
+plt.xlabel("Polarity Score")
+plt.ylabel("Density")
+plt.title("Sentiment Analysis of Tweets")
+plt.legend()
+plt.show()
+
+
+
+
+
+
+
+
